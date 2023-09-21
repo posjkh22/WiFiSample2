@@ -160,15 +160,6 @@ public class MainActivity extends AppCompatActivity {
         editSsid = findViewById(R.id.edit_ssid);
         editPw = findViewById(R.id.edit_pw);
 
-        //editSsid.setText("testBedMac");
-        //editPw.setText("12345678");
-
-        //editSsid.setText("jason_AX86U_5G");
-        //editPw.setText("smart10000!");
-
-        editSsid.setText("KH");
-        editPw.setText("12345678");
-
         tvConnectedWifi = findViewById(R.id.tvConnectedWifi);
         tvScenarioStatus = findViewById(R.id.tvScenarioStatus);
     }
