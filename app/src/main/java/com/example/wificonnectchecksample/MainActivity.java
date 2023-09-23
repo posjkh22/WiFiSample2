@@ -3,6 +3,7 @@ package com.example.wificonnectchecksample;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Observer;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -39,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
     private EditText editPw;
 
 
-
     private String currentSSID = "";
     private String currentBSSID = "";
 
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
             android.Manifest.permission.WRITE_SETTINGS,
     };
 
-    WiFiStatusManager wiFiStatusManager = null;
+    WiFiStatus wiFiStatus = null;
 
     WiFiScanManager wifiScanManager = null;
 
@@ -69,7 +69,21 @@ public class MainActivity extends AppCompatActivity {
 
         initUiContents();
 
-        //setWifiEnabled();
+        observeWiFiStatus();
+    }
+
+    private void observeWiFiStatus() {
+
+        registerWifiManager();
+        wiFiStatus.observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String ssid) {
+                Log.d(TAG, "observe: " + ssid);
+                currentSSID = ssid;
+                tvConnectedWifi.setText(ssid);
+                registerConnectedLog(ssid);
+            }
+        });
     }
 
     @Override
@@ -77,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.d(TAG, "onResume");
         registerWifiManager();
-
     }
 
     @Override
@@ -88,21 +101,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setWifiEnabled() {
-        if (wiFiStatusManager == null) {
-            wiFiStatusManager = new WiFiStatusManager(this);
+        if (wiFiStatus == null) {
+            wiFiStatus = new WiFiStatus(this);
         }
-        if (!wiFiStatusManager.isWifiEnabled()) {
-            wiFiStatusManager.setWifiEnabled();
+        if (!wiFiStatus.isWifiEnabled()) {
+            wiFiStatus.setWifiEnabled();
         }
     }
 
     private void registerWifiManager() {
-        if (wiFiStatusManager != null) {
-            wiFiStatusManager.register();
+        if (wiFiStatus != null) {
+            wiFiStatus.register();
         }
         else {
-            wiFiStatusManager = new WiFiStatusManager(this);
-            wiFiStatusManager.register();
+            wiFiStatus = new WiFiStatus(this);
+            wiFiStatus.register();
         }
         if (wifiScanManager == null) {
             wifiScanManager = new WiFiScanManager(this);
@@ -110,12 +123,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     private void unregisterWifiManager() {
-        if (wiFiStatusManager != null) {
-            wiFiStatusManager.unregister();
+        if (wiFiStatus != null) {
+            wiFiStatus.unregister();
         }
         else {
-            wiFiStatusManager = new WiFiStatusManager(this);
-            wiFiStatusManager.unregister();
+            wiFiStatus = new WiFiStatus(this);
+            wiFiStatus.unregister();
         }
         if (wifiScanManager != null) {
             wifiScanManager.unregister();
@@ -160,12 +173,14 @@ public class MainActivity extends AppCompatActivity {
         editSsid = findViewById(R.id.edit_ssid);
         editPw = findViewById(R.id.edit_pw);
 
+        editSsid.setText("KH");
+        editPw.setText("12345678");
+
         tvConnectedWifi = findViewById(R.id.tvConnectedWifi);
         tvScenarioStatus = findViewById(R.id.tvScenarioStatus);
     }
 
     private void run() {
-        connect();
         testScenario(10 * 1000, 1000);
     }
 
@@ -181,11 +196,11 @@ public class MainActivity extends AppCompatActivity {
         final String pw = editPw.getText().toString();
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            WiFiConnectManagerQ cm  = new WiFiConnectManagerQ(this);
+            WiFiConnectQ cm  = new WiFiConnectQ(this);
             cm.connect(ssid, pw);
         }
         else {
-            WiFiConnectManager cm = new WiFiConnectManager(this);
+            WiFiConnect cm = new WiFiConnect(this);
             cm.connect(ssid, pw);
         }
     }
@@ -208,7 +223,54 @@ public class MainActivity extends AppCompatActivity {
         tvWifiStatus.append(log);
     }
 
+
+    private boolean checkPermission(){
+        int result;
+        List<String> listPermission = new ArrayList<>();
+        for(String p : permission){
+            result = ContextCompat.checkSelfPermission(MainActivity.this,p);
+            if (result != PackageManager.PERMISSION_GRANTED){
+                listPermission.add(p);
+            }
+        }
+        if(!listPermission.isEmpty()){
+            ActivityCompat.requestPermissions(MainActivity.this,listPermission.toArray(new String[listPermission.size()]),0);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String type = intent.getStringExtra("type");
+
+        switch(type) {
+
+            case "wifi_scanned_info": {
+                currentScanList = (List<ScanResult>) intent.getSerializableExtra("scanList");
+                for (ScanResult item : currentScanList) {
+                    String ssid = item.SSID;
+                    String bssid = item.BSSID;
+                    this.registerScanLog(ssid + " [" + bssid + "]");
+                }
+            }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+
     private void testScenario(int msTimeout, int msPolling) {
+
+        if (currentSSID.equals(editSsid.getText().toString())) {
+            tvScenarioStatus.setText("PASS");
+            return;
+        }
+
+        connect();
 
         new Thread(new Runnable() {
 
@@ -247,61 +309,5 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }).start();
-    }
-
-    private boolean checkPermission(){
-        int result;
-        List<String> listPermission = new ArrayList<>();
-        for(String p : permission){
-            result = ContextCompat.checkSelfPermission(MainActivity.this,p);
-            if (result != PackageManager.PERMISSION_GRANTED){
-                listPermission.add(p);
-            }
-        }
-        if(!listPermission.isEmpty()){
-            ActivityCompat.requestPermissions(MainActivity.this,listPermission.toArray(new String[listPermission.size()]),0);
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        String type = intent.getStringExtra("type");
-
-        switch(type) {
-
-            case "wifi_scanned_info": {
-                currentScanList = (List<ScanResult>) intent.getSerializableExtra("scanList");
-                for (ScanResult item : currentScanList) {
-                    String ssid = item.SSID;
-                    String bssid = item.BSSID;
-                    this.registerScanLog(ssid + " [" + bssid + "]");
-                }
-            } break;
-
-            case "wifi_connected_info": {
-                String ssid = intent.getStringExtra("ssid");
-                String bssid = intent.getStringExtra("bssid");
-                if (!currentSSID.equals(ssid) || !currentBSSID.equals(bssid)) {
-                    currentSSID = ssid;
-                    currentBSSID = bssid;
-                    tvConnectedWifi.setText(currentSSID);
-                    if (!currentBSSID.isEmpty()) {
-                        this.registerConnectedLog(ssid + " [" + bssid + "]");
-                    }
-                    else {
-                        this.registerConnectedLog(ssid);
-                    }
-                }
-            } break;
-
-            case "wifi_status": {
-                String result = intent.getStringExtra("result");
-                this.registerConnectLog("Try to connect: " + result);
-            } break;
-
-        }
     }
 }

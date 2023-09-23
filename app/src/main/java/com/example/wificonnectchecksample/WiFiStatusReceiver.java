@@ -1,7 +1,5 @@
 package com.example.wificonnectchecksample;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +12,12 @@ public class WiFiStatusReceiver extends BroadcastReceiver {
 
     final String TAG = "WiFiStatusReceiver";
 
+    private WiFiStatus status;
+
+    public WiFiStatusReceiver(WiFiStatus status) {
+        this.status = status;
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
 
@@ -24,19 +28,8 @@ public class WiFiStatusReceiver extends BroadcastReceiver {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             String ssid = wifiInfo.getSSID();
             String bssid = wifiInfo.getBSSID();
-
             Log.d(TAG, "ssid: " +ssid + "/ bssid: "+ bssid);
-
-            Intent it = new Intent(context, MainActivity.class);
-            it.addFlags(
-                    it.FLAG_ACTIVITY_SINGLE_TOP |
-                    it.FLAG_ACTIVITY_CLEAR_TOP);
-
-            it.putExtra("type", "wifi_connected_info");
-            it.putExtra("ssid", ssid.substring(1, ssid.length() - 1));
-            it.putExtra("bssid", bssid);
-            startActivity(context, it, null);
-
+            this.status.postValue(ssid);
         }
     }
 }

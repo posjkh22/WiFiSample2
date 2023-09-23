@@ -4,33 +4,19 @@ import static android.content.Context.WIFI_SERVICE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
-import android.net.wifi.WifiNetworkSpecifier;
-import android.os.Build;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import java.util.List;
 
-
-public class WiFiConnectManager {
+public class WiFiConnect {
 
     private Context context;
-    private ConnectivityManager connectivityManager;
     private WifiManager wifiManager;
 
-    private String TAG = "WiFiConnectManager";
+    private String TAG = "WiFiConnect";
 
-    public WiFiConnectManager(Context context) {
+    public WiFiConnect(Context context) {
         this.context = context;
-        this.connectivityManager = (ConnectivityManager) this.context.getSystemService(Context.CONNECTIVITY_SERVICE);
         this.wifiManager = (WifiManager) context.getSystemService(WIFI_SERVICE);
     }
 
@@ -66,8 +52,5 @@ public class WiFiConnectManager {
                 break;
             }
         }
-
-
     }
-
 }

@@ -3,43 +3,46 @@ package com.example.wificonnectchecksample;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
 import android.util.Log;
 
-public class WiFiStatusManager {
+import androidx.lifecycle.LiveData;
+
+public class WiFiStatus extends LiveData<String> {
+
+    final String TAG = "WiFiStatusManager";
 
     private Context context;
     private  WiFiStatusReceiver wiFiStatusReceiver;
     private  WiFiStatusReceiverS wiFiStatusReceiverS;
     private  WiFiStatusReceiverQ wiFiStatusReceiverQ;
 
-    final String TAG = "WiFiStatusManager";
-
-    public WiFiStatusManager(Context context) {
+    public WiFiStatus(Context context) {
         this.context = context;
     }
 
+    @Override
+    public void postValue(String value) {
+        super.postValue(value);
+    }
+
     public void register() {
-
-        Log.d(TAG, "register WiFiStatusReceiver");
-
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             if (wiFiStatusReceiverS == null) {
-                wiFiStatusReceiverS = new WiFiStatusReceiverS(this.context);
+                wiFiStatusReceiverS = new WiFiStatusReceiverS(this.context, this);
                 wiFiStatusReceiverS.register();
             }
         }
         else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             if (wiFiStatusReceiverQ == null) {
-                wiFiStatusReceiverQ = new WiFiStatusReceiverQ(this.context);
+                wiFiStatusReceiverQ = new WiFiStatusReceiverQ(this.context, this);
                 wiFiStatusReceiverQ.register();
             }
         }
         else {
             if (wiFiStatusReceiver == null) {
-                wiFiStatusReceiver = new WiFiStatusReceiver();
+                wiFiStatusReceiver = new WiFiStatusReceiver(this);
                 IntentFilter intentFilter = new IntentFilter();
                 intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
                 this.context.registerReceiver(wiFiStatusReceiver, intentFilter);
@@ -47,9 +50,6 @@ public class WiFiStatusManager {
         }
     }
     public void unregister() {
-
-        Log.d(TAG, "unregister WiFiStatusReceiver");
-
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             if (wiFiStatusReceiverS != null) {
                 wiFiStatusReceiverS.unregister();
@@ -84,5 +84,4 @@ public class WiFiStatusManager {
             wifiManager.setWifiEnabled(true);
         }
     }
-
 }
