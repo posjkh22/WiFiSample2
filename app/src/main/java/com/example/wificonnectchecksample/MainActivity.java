@@ -173,8 +173,8 @@ public class MainActivity extends AppCompatActivity {
         editSsid = findViewById(R.id.edit_ssid);
         editPw = findViewById(R.id.edit_pw);
 
-        editSsid.setText("KH");
-        editPw.setText("12345678");
+        //editSsid.setText("KH");
+        //editPw.setText("12345678");
 
         tvConnectedWifi = findViewById(R.id.tvConnectedWifi);
         tvScenarioStatus = findViewById(R.id.tvScenarioStatus);
